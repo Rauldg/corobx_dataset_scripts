@@ -27,13 +27,13 @@ LOGS_AND_STREAMS_TO_CONVERT = {
 
 
 
-def convert_rock_logs():
+def convert_rock_logs(logs_dir, output_dir, logs_and_streams_to_convert):
     # Create the output directory if it does not exist
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    for log, streams in LOGS_AND_STREAMS_TO_CONVERT.items():
-        rock_log_file = LOGS_DIR + log
+    os.makedirs(output_dir, exist_ok=True)
+    for log, streams in logs_and_streams_to_convert.items():
+        rock_log_file = logs_dir + log
         for stream in streams:
-            output_file = OUTPUT_DIR + log.replace('.0.log', '.0.%s.msgpack'%stream)
+            output_file = output_dir + log.replace('.0.log', '.0.%s.msgpack'%stream)
             # Check if the file already exists
             if os.path.exists(output_file):
                 print(f"File {output_file} already exists. Skipping the convertion ...")
@@ -48,22 +48,22 @@ def convert_rock_logs():
                 proc.expect(pexpect.EOF)
                 proc.close()
 
-def convert_mspack_to_relational():
-    # For each log file in OUTPUT_DIR, convert it to relational format
-    for logfile in os.listdir(OUTPUT_DIR):
+def convert_mspack_to_relational(msgpack_dir):
+    # For each log file in msgpack_dir, convert it to relational format
+    for logfile in os.listdir(msgpack_dir):
         if logfile.endswith('.msgpack'):
             # Check if the corresponing relational file already exists
-            if os.path.exists(OUTPUT_DIR + logfile.replace('.msgpack', '.relational')):
+            if os.path.exists(msgpack_dir + logfile.replace('.msgpack', '.relational')):
                 print(f"File {logfile.replace('.msgpack', '.relational')} already exists. Skipping the convertion ...")
             else:
-                logfile_relational = OUTPUT_DIR + logfile.replace('.msgpack', '.relational')
-                pocolog2msgpack.object2relational(OUTPUT_DIR + logfile, logfile_relational, whitelist=['position.data'])
+                logfile_relational = msgpack_dir + logfile.replace('.msgpack', '.relational')
+                pocolog2msgpack.object2relational(msgpack_dir + logfile, logfile_relational, whitelist=['position.data'])
 
-def load_all_streams():
+def load_all_streams(output_dir, logs_and_streams_to_convert):
     streams_data = {}
-    for log, streams in LOGS_AND_STREAMS_TO_CONVERT.items():
+    for log, streams in logs_and_streams_to_convert.items():
         for stream in streams:
-            msgpack_file = OUTPUT_DIR + log.replace('.0.log', '.0.%s.relational'%stream)
+            msgpack_file = output_dir + log.replace('.0.log', '.0.%s.relational'%stream)
             log_data = msgpack.unpack(open(msgpack_file, "rb"))    
             df = pd.DataFrame(log_data[stream])
             df.set_index("timestamp", inplace=True)
@@ -118,28 +118,49 @@ def plot_solution_vs_time(streams_data):
     plt.savefig(OUTPUT_DIR + 'solution_vs_time.png')
 
 
-def prune_before_movement(streams_data):
+def prune_before_movement(streams_data, prune_until_second=None):
     odometry_delta = streams_data['coyote3_odometry.odometry_delta_samples']
     # Find the first timestamp when the rover starts moving
     first_movement = odometry_delta[odometry_delta['position.data.0'] > 0].index[0]
     pruned_streams_data = {}
     for stream, df in streams_data.items():
         pruned_streams_data[stream] = df[df.index >= first_movement]
+    if prune_until_second:
+        odometry = streams_data['coyote3_odometry.odometry_samples']
+        prune_until_timestamp = odometry[odometry['duration_seconds'] > prune_until_second].index[0]
+        for stream, df in pruned_streams_data.items():
+            pruned_streams_data[stream] = df[df.index > prune_until_timestamp]
     return pruned_streams_data
 
-def plot_odometry_positions(odometry_df):
+def prune_after_movement(streams_data, prune_from_second=None):
+    odometry_delta = streams_data['coyote3_odometry.odometry_delta_samples']
+    # Find the last timestamp when the rover was moving
+    last_movement = odometry_delta[odometry_delta['position.data.0'] > 0].index[-1]
+    pruned_streams_data = {}
+    for stream, df in streams_data.items():
+        pruned_streams_data[stream] = df[df.index <= last_movement]
+    if prune_from_second:
+        odometry = streams_data['coyote3_odometry.odometry_samples']
+        prune_from_timestamp = odometry[odometry['duration_seconds'] > prune_from_second].index[0]
+        for stream, df in pruned_streams_data.items():
+            pruned_streams_data[stream] = df[df.index < prune_from_timestamp]
+    return pruned_streams_data
+
+def plot_odometry_positions(odometry_df, output_dir, show=False):
     plt.figure(figsize=(10, 6))
-    plt.plot(odometry_df.index, odometry_df['position.data.0'], marker='o', linestyle='-', label='X')
-    plt.plot(odometry_df.index, odometry_df['position.data.1'], marker='o', linestyle='-', label='Y')
-    plt.plot(odometry_df.index, odometry_df['position.data.2'], marker='o', linestyle='-', label='Z')
-    plt.xlabel('Timestamp')
-    plt.ylabel('Position')
-    plt.title('Odometry Positions vs. Timestamp')
+    
+    plt.plot(odometry_df['duration_seconds'], odometry_df['position.data.0'], marker='o', linestyle='-', label='X')
+    plt.plot(odometry_df['duration_seconds'], odometry_df['position.data.1'], marker='o', linestyle='-', label='Y')
+    plt.plot(odometry_df['duration_seconds'], odometry_df['position.data.2'], marker='o', linestyle='-', label='Z')
+    plt.xlabel('Duration (s)')
+    plt.ylabel('Position (m)')
+    plt.title('Odometry Position vs. Duration')
     plt.legend()
     plt.grid(True)
-    #plt.show()
+    if show:
+        plt.show()
     # Save the plot
-    plt.savefig(OUTPUT_DIR + 'odometry_positions_time.png')
+    plt.savefig(output_dir + 'odometry_positions_time.png')
 
 def plot_local_cartesian_positions(local_cartesian_gps_df):
     plt.figure(figsize=(10, 6))
@@ -178,7 +199,7 @@ def prune_not_rtk_fixed(streams_data):
         streams_data['coyote3_geodesic2cart.local_cartesian_position_out'] = df[df.index < first_not_rtk_fixed_index]
     return streams_data
 
-def plot_positions_3d(positions_df, name='local_cart_gps_positions_3d'):
+def plot_positions_3d(positions_df, output_dir, name='local_cart_gps_positions_3d'):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.plot(positions_df['position.data.0'], positions_df['position.data.1'], positions_df['position.data.2'])
@@ -186,23 +207,30 @@ def plot_positions_3d(positions_df, name='local_cart_gps_positions_3d'):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     plt.show()
-    plt.savefig(OUTPUT_DIR + '%s.png'%name)
+    plt.savefig(output_dir + '%s.png'%name)
+
+def compute_duration(df):
+    df['timestamps_seconds'] = df.index / 1e6
+    df['duration_seconds'] = df['timestamps_seconds'] - df['timestamps_seconds'].iloc[0]
+    return df
 
 if __name__ == '__main__':
-    convert_rock_logs()
-    convert_mspack_to_relational()
-    streams_data = load_all_streams()
+    convert_rock_logs(LOGS_DIR, OUTPUT_DIR, LOGS_AND_STREAMS_TO_CONVERT)
+    convert_mspack_to_relational(OUTPUT_DIR)
+    streams_data = load_all_streams(OUTPUT_DIR, LOGS_AND_STREAMS_TO_CONVERT)
     print("Loaded the following streams in a dictionary:")
     print(streams_data.keys())
     # Prune the streams_data:
     # - Remove all streams before the rover starts moving
     pruned_streams_data = prune_before_movement(streams_data)
+    pruned_streams_data['coyote3_odometry.odometry_samples'] = compute_duration(pruned_streams_data['coyote3_odometry.odometry_samples'])
+    pruned_streams_data = prune_after_movement(pruned_streams_data, prune_from_second=492)
     # - Remove from coyote3_geodesic2cart.local_cartesian_position_out, the ranges where the positionType is not 'RTK_FIXED'
     pruned_streams_data = prune_not_rtk_fixed(pruned_streams_data)
-    plot_positions_3d(pruned_streams_data['coyote3_geodesic2cart.local_cartesian_position_out'])
-    plot_positions_3d(pruned_streams_data['coyote3_odometry.odometry_samples'], name='odometry_positions_3d')   
+    plot_positions_3d(pruned_streams_data['coyote3_geodesic2cart.local_cartesian_position_out'], OUTPUT_DIR)
+    plot_positions_3d(pruned_streams_data['coyote3_odometry.odometry_samples'], OUTPUT_DIR, name='odometry_positions_3d')   
     plot_local_cartesian_positions(pruned_streams_data['coyote3_geodesic2cart.local_cartesian_position_out'])
-    plot_odometry_positions(pruned_streams_data['coyote3_odometry.odometry_samples'])
+    plot_odometry_positions(pruned_streams_data['coyote3_odometry.odometry_samples'], OUTPUT_DIR)
     plot_solution_vs_time(pruned_streams_data)
     traveled_distance = estimate_traveled_distance(pruned_streams_data['coyote3_geodesic2cart.local_cartesian_position_out'])
     print(f"Estimated traveled distance with RTK_FIXED precision: {traveled_distance} meters")
@@ -213,5 +241,5 @@ if __name__ == '__main__':
     total_drive_time = total_drive_time/1e6
     print(f"Total drive time: {total_drive_time} seconds")
     print(f"Total drive time: {total_drive_time/60.0} minutes")
-    average_speed = traveled_distance / total_drive_time
+    average_speed = traveled_distance_odometry / total_drive_time
     print(f"Average speed: {average_speed} m/s")    
