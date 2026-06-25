@@ -1,14 +1,16 @@
-# Scripts to export and import the logs collected by Asguard v4 for SLAM
+# Scripts to download, export to msgpack and import into python the logs collected by Coyote 3
 
-The dataset contains the samples used to generate the map provided as ground truth in the publication <TODO: ADD Title>
+The dataset contains the logs of the experiments described in the publication Field Testing of Rimless Wheeled Micro Rovers in Space Analogue Environments by Raúl Domı́nguez, Ravisankar Selvaraju, Felix Glinka, Christoph Hertzberg, Mehmed Yüksel and Frank Kirchner. Submitted to the Isparo 2026 conference.
+The rover logs from the Long Traverse and from the SLAM experiment have been produced with the Rock robotics logger. Scripts to export the data to msgpack, a format that can be loaded into python as dataframes, are provided. From that point, it should be possible to convert to any desired format.
 
-*NOTE:* The dataset has three parts. Between each of the parts, the data capture had to be interrupted. After each interruption, the position of the rover is not exactly the same as before the interruption. For that reason, it has been quite challenging to generate a full reconstruction using the three parts one after the other. In fact, the last part of the log has not been fully filtered, since it was not possible to combine the first and second part, this last part was not pre-processed.
 
-## Steps to export to standard formats
+## Steps 
 
-0. Run the `convert_<datatype>.py` to import convert from rock logs to msgpack files. 
+0. Run `download_log.py <log_key>` to download the log of an experiment. Without the `log_key` argument, the list of available logs are shown and nothing is downloaded.
 
-0. Run the `export_<datatype>.py` to export from the msgpack files to the separate files containing each one a single sample of <datatype>
+0. Run the `convert_to_msgpack.py <log_key>` to convert from a rock log to msgpack files. Thesgpack format by default converted to a nested format. To work with dataframes a relational format is more convinient. Thus, by default the conversion generates a `<stream_name>.msgpack` and a `<stream_name>_relational.msgpack`.
+
+0. Run the `load_as_dataframe.py <log_key> <stream_key>` to load one relation msgpack file and see the summary of that stream. If no `<stream_key>` is passed the available stream_keys are displayed.
 
 ## Import standard formats into python
 
