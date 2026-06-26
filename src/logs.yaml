@@ -1,0 +1,21 @@
+# Catalog of downloadable logs.
+# Schema:  <log_id>:
+#            description: <text>
+#            url:         <direct download URL>
+#            archive_name: <name of the downloaded archive file>
+
+vulcano_log_traverse_2024:
+  description: >
+    Initially drives over a rocky offtrack. Then through a path with no
+    obstacles (~75 meters). Then, continues downhill with rocks to
+    negotiate along the way. Finally it goes over a flat and rocky surface.
+    The GNSS RTK correction is lost after 8 minutes.
+    The front and back RGB images were captured.
+  url: https://zenodo.org/api/records/20625085/files/20240619_Vulcano_LongTraverse.tar.gz/content
+  archive_name: 20240619_Vulcano_LongTraverse.tar.gz
+
+test:
+  description: >
+    A test log for validating the scripts.
+  url: https://zenodo.org/api/records/14611244/files/Readme.md/content
+  archive_name: Readme.md

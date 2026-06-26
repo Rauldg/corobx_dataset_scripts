@@ -4,3 +4,5 @@ numpy
 tifffile
 inquirer
 pandas
+requests
+pyyaml

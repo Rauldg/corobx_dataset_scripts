@@ -8,7 +8,7 @@ The rover logs from the Long Traverse and from the SLAM experiment have been pro
 
 0. Run `download_log.py <log_key>` to download the log of an experiment. Without the `log_key` argument, the list of available logs are shown and nothing is downloaded.
 
-0. Run the `convert_to_msgpack.py <log_key>` to convert from a rock log to msgpack files. Thesgpack format by default converted to a nested format. To work with dataframes a relational format is more convinient. Thus, by default the conversion generates a `<stream_name>.msgpack` and a `<stream_name>_relational.msgpack`.
+0. Run the `convert_to_msgpack.py <log_key>` to convert from a rock log to msgpack files. The msgpack format by default converted to a nested format. To work with dataframes a relational format is more convinient. Thus, by default the conversion generates a `<stream_name>.msgpack` and a `<stream_name>_relational.msgpack`.
 
 0. Run the `load_as_dataframe.py <log_key> <stream_key>` to load one relation msgpack file and see the summary of that stream. If no `<stream_key>` is passed the available stream_keys are displayed.
 
