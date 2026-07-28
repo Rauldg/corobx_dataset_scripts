@@ -10,6 +10,7 @@ The catalog (logs.yaml) maps each log_id to a ``description`` and a direct
 ``downloads/`` folder; an already-complete download is skipped.
 """
 
+import os
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -19,7 +20,10 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 LOGS_YAML = HERE / "logs.yaml"
-DOWNLOAD_DIR = HERE.parent / "downloads"
+# Downloads/conversions live under ISPARO_DATA_DIR (default /data inside the image)
+# so a host folder can be bind-mounted in; falls back to the repo for host runs.
+DATA_DIR = Path(os.environ.get("ISPARO_DATA_DIR", HERE.parent))
+DOWNLOAD_DIR = DATA_DIR / "downloads"
 
 CHUNK = 1 << 16  # 64 KiB
 

@@ -4,7 +4,7 @@
 #            url:         <direct download URL>
 #            archive_name: <name of the downloaded archive file>
 
-vulcano_log_traverse_2024:
+vulcano_long_traverse_2024:
   description: >
     Initially drives over a rocky offtrack. Then through a path with no
     obstacles (~75 meters). Then, continues downhill with rocks to
