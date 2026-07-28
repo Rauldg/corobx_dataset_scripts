@@ -1,0 +1,6 @@
+.git/
+downloads/
+isparo_data/
+isparo_26/
+**/__pycache__/
+*.pyc
