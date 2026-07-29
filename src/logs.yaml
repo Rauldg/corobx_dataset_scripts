@@ -1,8 +1,12 @@
 # Catalog of downloadable logs.
 # Schema:  <log_id>:
-#            description: <text>
-#            url:         <direct download URL>
+#            description:  <text>
+#            # single-file archive:
+#            url:          <direct download URL>
 #            archive_name: <name of the downloaded archive file>
+#            # OR a multi-part archive (downloaded then concatenated):
+#            parts:        [<part URL>, <part URL>, ...]
+#            archive_name: <name of the merged archive>   # cat <name>.part* > <name>
 
 vulcano_long_traverse_2024:
   description: >
@@ -13,6 +17,90 @@ vulcano_long_traverse_2024:
     The front and back RGB images were captured.
   url: https://zenodo.org/api/records/20625085/files/20240619_Vulcano_LongTraverse.tar.gz/content
   archive_name: 20240619_Vulcano_LongTraverse.tar.gz
+
+slam_dataset:
+  description: >
+    A dataset for SLAM and odometry evaluation. The archive contains the LiDAR, IMU, and ground truth pose estimations described in the paper.
+  url: https://zenodo.org/api/records/20625085/files/slam_dataset.tar.gz/content
+  archive_name: slam_dataset.tar.gz
+
+vulcano_long_traverse_2025:
+  description: >
+    Second Vulcano long traverse (2025-06-11), downloaded as 10 parts and merged
+    automatically into a single archive. The traverse took place off-track. It
+    starts with the descent of a rocky slope, then going over a thin regolith
+    covered basin of around 60 m and finally traversing off-track for more than
+    100 m over rocky terrain. GNSS RTK corrections were received for the complete
+    trajectory, the RGB camera images were captured at 27Hz and pointclouds
+    produced by the front and back TOF cameras were collected at 8Hz.
+    ~40 GB across 10 parts; ensure ISPARO_DATA_DIR has enough free space for the
+    parts and the merged archive.
+  parts:
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part01/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part02/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part03/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part04/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part05/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part06/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part07/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part08/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part09/content
+    - https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part10/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz
+
+# Individual parts of 20250611_Vulcano_LongTraverse, for fetching one piece at a
+# time. A single part is NOT a usable archive on its own; download every part and
+# merge them (use the 'vulcano_long_traverse_2025' entry above, or run
+# `cat 20250611_Vulcano_LongTraverse.tar.gz.part* > 20250611_Vulcano_LongTraverse.tar.gz`).
+vulcano_long_traverse_2025_part01:
+  description: Part 01/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part01/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part01
+
+vulcano_long_traverse_2025_part02:
+  description: Part 02/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part02/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part02
+
+vulcano_long_traverse_2025_part03:
+  description: Part 03/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part03/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part03
+
+vulcano_long_traverse_2025_part04:
+  description: Part 04/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part04/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part04
+
+vulcano_long_traverse_2025_part05:
+  description: Part 05/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part05/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part05
+
+vulcano_long_traverse_2025_part06:
+  description: Part 06/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part06/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part06
+
+vulcano_long_traverse_2025_part07:
+  description: Part 07/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part07/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part07
+
+vulcano_long_traverse_2025_part08:
+  description: Part 08/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part08/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part08
+
+vulcano_long_traverse_2025_part09:
+  description: Part 09/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part09/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part09
+
+vulcano_long_traverse_2025_part10:
+  description: Part 10/10 of 20250611_Vulcano_LongTraverse (see vulcano_long_traverse_2025).
+  url: https://zenodo.org/api/records/20625085/files/20250611_Vulcano_LongTraverse.tar.gz.part10/content
+  archive_name: 20250611_Vulcano_LongTraverse.tar.gz.part10
 
 test:
   description: >

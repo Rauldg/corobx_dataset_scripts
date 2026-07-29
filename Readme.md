@@ -48,6 +48,15 @@ mkdir -p "$ISPARO_DATA_DIR"
    ```bash
    python3 src/download_log.py vulcano_long_traverse_2024
    ```
+   Some logs are published on Zenodo split into parts. For those the catalog has a
+   combined entry that downloads **all** parts and concatenates them into the
+   single archive automatically (equivalent to
+   `cat <name>.part* > <name>`), plus one entry per part, to fetch pieces
+   individually and resume:
+   ```bash
+   python3 src/download_log.py vulcano_long_traverse_2025            # all 10 parts + merge
+   python3 src/download_log.py vulcano_long_traverse_2025_part03     # just part 03
+   ```
 
 2. **Convert** a log to msgpack — *docker required* (the only step that needs the
    `pocolog2msgpack` / Rock toolchain). Without a `<log_id>` the available logs are

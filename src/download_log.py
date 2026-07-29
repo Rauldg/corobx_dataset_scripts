@@ -5,12 +5,19 @@ Usage:
     download_log.py             # list the available log_ids and exit
     download_log.py <log_id>    # download that log's archive into downloads/
 
-The catalog (logs.yaml) maps each log_id to a ``description`` and a direct
-``url`` (a Zenodo /content link). Archives are streamed into the package's
-``downloads/`` folder; an already-complete download is skipped.
+The catalog (logs.yaml) maps each log_id to a ``description`` and either:
+  * a single ``url`` (a Zenodo /content link) plus an ``archive_name``, or
+  * a ``parts`` list of URLs plus an ``archive_name``: every part is downloaded
+    and then concatenated into ``archive_name`` (equivalent to running
+    ``cat <archive_name>.part* > <archive_name>``). Large logs split on Zenodo
+    can also be fetched one part at a time via their own single-``url`` entries.
+
+Archives are streamed into the package's ``downloads/`` folder; an
+already-complete download (and an already-merged archive) is skipped.
 """
 
 import os
+import shutil
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -61,15 +68,23 @@ def list_logs(catalog):
 
 
 def download(log_id, entry):
+    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+    if entry.get("parts"):
+        return download_parts(log_id, entry)
+
     url = entry.get("url")
     if not url:
         sys.exit(f"Log '{log_id}' has no 'url' in {LOGS_YAML}")
 
-    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
-    dest = DOWNLOAD_DIR / filename_from_url(url)
-    tmp = dest.with_suffix(dest.suffix + ".part")
+    print(f"Downloading '{log_id}'", flush=True)
+    return download_url(url, DOWNLOAD_DIR / filename_from_url(url))
 
-    print(f"Downloading '{log_id}'\n  from {url}\n  to   {dest}", flush=True)
+
+def download_url(url, dest):
+    """Stream ``url`` into ``dest`` (skipping an already-complete file). Returns dest."""
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    print(f"  from {url}\n  to   {dest}", flush=True)
 
     with requests.get(url, stream=True, allow_redirects=True) as r:
         if r.status_code == 404:
@@ -98,6 +113,61 @@ def download(log_id, entry):
     tmp.replace(dest)
     print(f"  -> done: {dest} ({done} bytes)")
     return dest
+
+
+def download_parts(log_id, entry):
+    """Download every part in ``entry['parts']`` and merge them into archive_name."""
+    parts = entry["parts"]
+    merged_name = entry.get("archive_name")
+    if not merged_name:
+        sys.exit(
+            f"Log '{log_id}' has 'parts' but no 'archive_name' (the merged file "
+            f"name) in {LOGS_YAML}"
+        )
+    merged = DOWNLOAD_DIR / merged_name
+    part_paths = [DOWNLOAD_DIR / filename_from_url(u) for u in parts]
+
+    # If the merged archive is already here and the parts were cleaned up to save
+    # space, there is nothing left to do.
+    if merged.exists() and not any(p.exists() for p in part_paths):
+        print(f"Already merged: {merged} ({merged.stat().st_size} bytes); no parts to fetch.")
+        return merged
+
+    print(f"Downloading '{log_id}' in {len(parts)} part(s)")
+    for i, (url, dest) in enumerate(zip(parts, part_paths), 1):
+        print(f"\n[part {i}/{len(parts)}]")
+        download_url(url, dest)
+
+    return merge_parts(part_paths, merged)
+
+
+def merge_parts(part_paths, merged):
+    """Concatenate ``part_paths`` (in order) into ``merged``; skip if already done.
+
+    Equivalent to ``cat <merged>.part* > <merged>`` but with a deterministic order
+    and an atomic rename, so a re-run after a completed merge is a no-op.
+    """
+    total = sum(p.stat().st_size for p in part_paths)
+    if merged.exists() and merged.stat().st_size == total:
+        print(f"\nAlready merged: {merged} ({total} bytes), skipping merge.")
+        return merged
+
+    print(f"\nMerging {len(part_paths)} part(s) -> {merged}")
+    print(f"  (equivalent to: cat {merged.name}.part* > {merged.name})", flush=True)
+    tmp = merged.with_suffix(merged.suffix + ".merging")
+    done = 0
+    with open(tmp, "wb") as out:
+        for p in part_paths:
+            with open(p, "rb") as src:
+                shutil.copyfileobj(src, out, CHUNK)
+            done += p.stat().st_size
+            _progress(done, total)
+    print()  # finish the progress line
+
+    tmp.replace(merged)
+    print(f"  -> done: {merged} ({merged.stat().st_size} bytes)")
+    print("  (the .part* files are kept; delete them to reclaim space)")
+    return merged
 
 
 def _progress(done, total):
