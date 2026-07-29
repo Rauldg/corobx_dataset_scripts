@@ -12,7 +12,7 @@
 #   docker run --rm -u "$(id -u):$(id -g)" -v "$PWD/isparo_data:/data" \
 #       isparo_scripts python3 src/download_log.py vulcano_log_traverse_2024
 
-FROM pocolog2msgpack:24.04
+FROM rauldg/pocolog2msgpack:24.04
 
 # the scripts and their Python dependencies
 # (installed system-wide into /usr/local; Ubuntu 24.04 is PEP-668 "externally managed")
